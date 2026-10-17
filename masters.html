@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0B0709">
+<title>名家荟萃 · 粤韵新声</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+
+  <div data-topbar data-title="名家荟萃" data-sub="粤剧百年"></div>
+
+  <div class="section" style="margin-top:6px">
+    <div class="card gold">
+      <p style="font-size:14px;line-height:1.95;color:#E4D9C4;margin:0">
+        粤剧的「名家」不只有台上的演员。有人写戏，有人唱戏，有人改戏——
+        下面四位，一位是唐家湾的编剧鬼才，一位把粤剧唱成了「南国红豆」，
+        一位把市井烟火写进了唱腔，一位把别的艺术都借来为粤剧所用。
+      </p>
+    </div>
+  </div>
+
+  <div class="section" id="list"></div>
+
+  <div class="section">
+    <div class="card">
+      <div class="sec-head" style="margin-bottom:8px"><h2 style="font-size:15px">为什么先讲这四位</h2></div>
+      <p class="hint" style="font-size:13.5px;color:#D8CBB4;line-height:1.95">
+        唐涤生是珠海唐家湾人，是「香山粤剧」这条线上最亮的坐标，也是本项目最重要的本土 IP；
+        红线女与马师曾让粤剧被全国看见；薛觉先证明了粤剧从来不是封闭的剧种。
+        后续我们会继续补充珠海本地院团、基层演员与传承人的访谈内容。
+      </p>
+    </div>
+    <div class="review-note">
+      ※ 生卒年、籍贯、代表作等信息整理自公开史料（地方志、媒体报道及公开百科条目），
+      正式对外发布前将逐条核对原始文献并请指导教师审校。
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="btn-row">
+      <button class="btn ghost" id="toMakeup">妆造知识 ›</button>
+      <button class="btn" id="toQuiz">测测我的行当</button>
+    </div>
+  </div>
+
+  <div data-footer></div>
+</div>
+
+<div data-bottomnav></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+mountChrome();
+
+document.getElementById('list').innerHTML = MASTERS.map(function (m, i) {
+  return '<div class="master fade-up d' + Math.min(6, i + 1) + '" style="--mc:' + m.accent + '">' +
+    '<div class="mh"><h3 class="mn">' + m.name + '</h3><span class="my">' + m.years + '</span></div>' +
+    '<div class="mt">' + m.tag + '</div>' +
+    '<p class="mo">' + m.oneLine + '</p>' +
+    '<div class="mb">' + m.body.map(function (p) { return '<p>' + p + '</p>'; }).join('') + '</div>' +
+    '<div class="mhl">' + m.highlight + '</div>' +
+    '<div class="mw">' + m.works.map(function (w) { return '<span class="tag plain">' + w + '</span>'; }).join('') + '</div>' +
+    '<div class="quote-block" style="margin-bottom:0">' + m.quote + '</div>' +
+  '</div>';
+}).join('');
+
+document.getElementById('toMakeup').addEventListener('click', function () { go('makeup.html'); });
+document.getElementById('toQuiz').addEventListener('click', function () { go('quiz.html'); });
+</script>
+</body>
+</html>

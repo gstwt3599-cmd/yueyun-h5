@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0B0709">
+<title>六柱制角色测试 · 粤韵新声</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+
+  <div data-topbar data-title="六柱制角色测试" data-sub="1 / 12"></div>
+
+  <div class="quiz-head">
+    <div class="progress"><i id="bar"></i></div>
+    <div class="q-meta"><b id="qnum">01</b><span>/ 12</span><span id="dimTag" class="tag plain" style="margin-left:auto"></span></div>
+  </div>
+
+  <div class="section" style="min-height:52vh">
+    <div class="q-text" id="qtext"></div>
+    <div id="opts"></div>
+  </div>
+
+  <div class="quiz-foot">
+    <div class="btn-row">
+      <button class="btn dark" id="prevBtn" style="flex:0 0 96px">上一题</button>
+      <button class="btn" id="nextBtn" disabled>下一题</button>
+    </div>
+    <div class="hint" style="text-align:center;margin-top:12px">
+      选一个最接近你的就好，没有标准答案
+    </div>
+  </div>
+
+  <div data-footer></div>
+</div>
+
+<div data-bottomnav></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/quiz.js"></script>
+<script>
+mountChrome();
+
+const answers = new Array(QUESTIONS.length).fill(null);
+let idx = 0;
+let locked = false;
+
+const bar = document.getElementById('bar');
+const qnum = document.getElementById('qnum');
+const qtext = document.getElementById('qtext');
+const opts = document.getElementById('opts');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const dimTag = document.getElementById('dimTag');
+
+/* 每道题的主维度标签（取该题出现次数最多的维度） */
+function dominantDim(q) {
+  const count = {};
+  q.options.forEach(function (o) {
+    Object.keys(o.w).forEach(function (d) { count[d] = (count[d] || 0) + o.w[d]; });
+  });
+  let best = 'A', bv = -1;
+  Object.keys(count).forEach(function (d) { if (count[d] > bv) { bv = count[d]; best = d; } });
+  return best;
+}
+
+function render() {
+  const q = QUESTIONS[idx];
+  qnum.textContent = String(idx + 1).padStart(2, '0');
+  bar.style.width = ((idx) / QUESTIONS.length * 100) + '%';
+  dimTag.textContent = '考察：' + DIM_LABEL[dominantDim(q)];
+  qtext.textContent = q.q;
+  qtext.classList.remove('fade-up'); void qtext.offsetWidth; qtext.classList.add('fade-up');
+
+  opts.innerHTML = '';
+  q.options.forEach(function (o, i) {
+    const b = el('button', { class: 'opt' + (answers[idx] === i ? ' on' : '') });
+    b.innerHTML = '<span class="dot"></span><span>' + o.t + '</span>';
+    b.addEventListener('click', function () { choose(i); });
+    opts.appendChild(b);
+  });
+  prevBtn.disabled = idx === 0;
+  nextBtn.disabled = answers[idx] === null;
+  nextBtn.textContent = idx === QUESTIONS.length - 1 ? '看结果' : '下一题';
+}
+
+function choose(i) {
+  if (locked) return;
+  answers[idx] = i;
+  $$('.opt', opts).forEach(function (b, k) { b.classList.toggle('on', k === i); });
+  nextBtn.disabled = false;
+  /* 轻微延时自动跳下一题，保留用户「看见自己选了」的反馈 */
+  locked = true;
+  setTimeout(function () {
+    locked = false;
+    if (idx < QUESTIONS.length - 1) { idx++; render(); }
+  }, 240);
+}
+
+prevBtn.addEventListener('click', function () {
+  if (idx > 0) { idx--; render(); }
+});
+
+nextBtn.addEventListener('click', function () {
+  if (answers[idx] === null) { toast('先选一个吧'); return; }
+  if (idx < QUESTIONS.length - 1) { idx++; render(); return; }
+  /* 收尾：计算并保存 */
+  if (answers.indexOf(null) !== -1) {
+    const miss = answers.indexOf(null);
+    idx = miss; render();
+    toast('第 ' + (miss + 1) + ' 题还没选');
+    return;
+  }
+  const res = computeMatch(answers);
+  saveResult({
+    roleId: res.roleId,
+    dims: res.dims,
+    ranking: toPercentBars(res.ranking),
+    at: Date.now()
+  });
+  go('role.html', { role: res.roleId, from: 'quiz' });
+});
+
+render();
+</script>
+</body>
+</html>

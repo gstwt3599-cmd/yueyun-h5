@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0B0709">
+<title>我的行当 · 粤韵新声</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+
+  <div data-topbar data-title="我的行当" data-sub="六柱制"></div>
+
+  <div class="result-hero" id="hero"></div>
+
+  <!-- 出场动画 -->
+  <div class="stage-frame">
+    <canvas id="stage"></canvas>
+    <button class="replay" id="replay">重播 ›</button>
+    <div class="stage-tip" id="stageTip"></div>
+  </div>
+  <div class="hint" style="padding:8px 20px 0;text-align:center">
+    动画为示意剪影，用于表现行当的典型姿态；正式版本将替换为美术绘制素材与配乐。
+  </div>
+
+  <!-- 匹配说明 -->
+  <div class="section" style="margin-top:20px">
+    <div class="card gold" id="matchCard"></div>
+    <div class="card">
+      <div class="sec-head" style="margin-bottom:12px"><h2 style="font-size:15px">六柱相似度</h2><span class="more" id="tieNote"></span></div>
+      <div class="score-list" id="scores"></div>
+      <div class="hint" style="margin-top:12px">结果由 12 道题的作答加权得出，越靠前的行当与你越接近。测完可以在首页重新测。</div>
+    </div>
+  </div>
+
+  <!-- 内容标签 -->
+  <div class="section" style="padding:0">
+    <div class="tabbar" id="tabs"></div>
+  </div>
+
+  <div class="section article" id="panel" style="margin-top:-4px"></div>
+
+  <!-- 同台其他柱子 -->
+  <div class="section">
+    <div class="sec-head"><span class="num">柱</span><h2>同台的其他五根台柱</h2></div>
+    <div class="role-strip" id="others"></div>
+  </div>
+
+  <div class="section">
+    <div class="btn-row">
+      <button class="btn ghost" id="retest">重新测一次</button>
+      <button class="btn" id="toMakeup">去学妆造</button>
+    </div>
+  </div>
+
+  <div data-footer></div>
+</div>
+
+<div data-bottomnav></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/character.js"></script>
+<script src="js/quiz.js"></script>
+<script>
+mountChrome();
+
+/* ---------- 解析当前角色 ---------- */
+let roleId = getParam('role');
+const saved = loadResult();
+if (!roleId && saved && saved.roleId) roleId = saved.roleId;
+if (!ROLES[roleId]) roleId = 'wenwusheng';
+const role = ROLES[roleId];
+const accent = (role.styling.palette && role.styling.palette[0]) || '#C9A227';
+document.documentElement.style.setProperty('--accent', accent);
+document.title = role.name + ' · 粤韵新声';
+
+/* ---------- 顶部信息 ---------- */
+document.getElementById('hero').innerHTML =
+  '<div class="kicker">' + role.pillar + ' · 你匹配到的是</div>' +
+  '<div class="rname">' + role.name + '</div>' +
+  '<div class="rnick">' + role.nick + '</div>' +
+  '<div class="rlegend">' + role.legend + '</div>' +
+  '<div style="margin-top:12px">' +
+    role.keywords.map(function (k) { return '<span class="tag">' + k + '</span>'; }).join('') +
+  '</div>';
+
+/* ---------- 出场动画 ---------- */
+const stage = createCharacterStage(document.getElementById('stage'), roleId, { loop: true });
+document.getElementById('stageTip').textContent = role.animation.tip;
+document.getElementById('replay').addEventListener('click', function () { stage.replay(); });
+
+/* ---------- 匹配说明 ---------- */
+document.getElementById('matchCard').innerHTML =
+  '<div class="sec-head" style="margin-bottom:8px"><h2 style="font-size:15px">' + role.name + ' · 匹配解读</h2></div>' +
+  '<p style="font-size:14px;line-height:1.95;color:#E4D9C4;margin-bottom:10px">' + role.matchText + '</p>' +
+  '<div class="quote-block">' + role.quote + '</div>';
+
+/* ---------- 相似度条 ---------- */
+(function () {
+  const list = document.getElementById('scores');
+  const note = document.getElementById('tieNote');
+  if (saved && saved.ranking) {
+    list.innerHTML = saved.ranking.map(function (b) {
+      const on = b.id === roleId ? ' top' : '';
+      return '<div class="score-row' + on + '">' +
+        '<span class="sn">' + b.name + '</span>' +
+        '<span class="track"><i style="width:' + b.percent + '%"></i></span>' +
+        '<span class="sv">' + b.percent + '%</span>' +
+      '</div>';
+    }).join('');
+    if (saved.at) {
+      const d = new Date(saved.at);
+      note.textContent = '测试于 ' + (d.getMonth() + 1) + '月' + d.getDate() + '日';
+    }
+  } else {
+    /* 没有测试记录（例如直接从二维码进入结果页）：不显示假数据，引导去测一次 */
+    list.innerHTML =
+      '<div class="hint" style="line-height:2">这里会显示你与六根台柱的相似度。' +
+      '现在还没有你的测试记录——点下面的按钮做一次 12 道题的测试，就能看到属于自己的结果。</div>';
+    note.textContent = '尚未测试';
+  }
+})();
+
+/* ---------- 内容标签：前世今生 / 妆造 / 代表作 ---------- */
+const PANELS = [
+  { key: 'story', label: '前世今生', render: renderStory },
+  { key: 'makeup', label: '妆造要点', render: renderMakeup },
+  { key: 'works', label: '代表剧目', render: renderWorks }
+];
+let activePanel = (location.hash || '#story').replace('#', '');
+if (!PANELS.some(function (p) { return p.key === activePanel; })) activePanel = 'story';
+
+function renderStory() {
+  const past = role.past.map(function (p, i) {
+    return '<p' + (i === 0 ? ' class="first"' : '') + '>' + p + '</p>';
+  }).join('');
+  const now = role.now.map(function (p) { return '<p>' + p + '</p>'; }).join('');
+  return '<h3>这个行当从哪里来</h3>' + past +
+         '<h3>今天它是什么模样</h3>' + now +
+         '<div class="review-note">※ 本段内容由项目组根据公开史料整理，用于科普展示；正式发布前将请粤剧专业老师与传承人审校。</div>';
+}
+
+function renderMakeup() {
+  const s = role.styling;
+  return '<h3>妆造要点</h3>' +
+    '<div class="kv">' +
+      '<div class="row"><span class="k">妆面</span><span class="v">' + s.face + '</span></div>' +
+      '<div class="row"><span class="k">头饰</span><span class="v">' + s.hair + '</span></div>' +
+      '<div class="row"><span class="k">服装</span><span class="v">' + s.costume + '</span></div>' +
+      '<div class="row"><span class="k">鞋履</span><span class="v">' + s.shoes + '</span></div>' +
+      '<div class="row"><span class="k">随身</span><span class="v">' + s.props.join(' · ') + '</span></div>' +
+    '</div>' +
+    '<h3>这一行的主色</h3>' +
+    '<div class="palette">' + s.palette.map(function (c) { return '<i style="background:' + c + '"></i>'; }).join('') + '</div>' +
+    '<h3>日常可以怎么借鉴</h3>' +
+    '<ul style="padding-left:20px;font-size:14px;line-height:1.95;color:#E4D9C4">' +
+      s.tips.map(function (t) { return '<li style="margin-bottom:8px">' + t + '</li>'; }).join('') +
+    '</ul>' +
+    '<div class="review-note">※ 想系统了解全行当的妆造知识，可以去看 <a href="makeup.html">妆造搭配知识</a> 页。</div>';
+}
+
+function renderWorks() {
+  return '<h3>常演剧目</h3>' +
+    '<div>' + role.works.map(function (w) { return '<span class="tag plain">' + w + '</span>'; }).join('') + '</div>' +
+    '<div class="review-note">※ 剧目与角色对应关系以常见演出版本为准，不同剧团、不同年代的版本会有差异。</div>' +
+    '<h3>去听什么</h3>' +
+    '<p>搜「' + role.works[0] + '」的演出片段，先听唱、再看身段。看的时候留意一件事：这一行当的演员，是怎么用身体把情绪「说」出来的。</p>';
+}
+
+function renderPanel() {
+  $$('#tabs .tab').forEach(function (t) {
+    t.classList.toggle('on', t.getAttribute('data-key') === activePanel);
+  });
+  const panel = document.getElementById('panel');
+  panel.innerHTML = PANELS.filter(function (p) { return p.key === activePanel; })[0].render();
+  panel.classList.remove('fade-in'); void panel.offsetWidth; panel.classList.add('fade-in');
+  /* 本站用 hash 仅作锚点，避免触发浏览器滚动跳动 */
+  if (history.replaceState) history.replaceState(null, '', '#' + activePanel);
+}
+
+(function () {
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = PANELS.map(function (p) {
+    return '<button class="tab" data-key="' + p.key + '">' + p.label + '</button>';
+  }).join('');
+  $$('.tab', tabs).forEach(function (t) {
+    t.addEventListener('click', function () { activePanel = t.getAttribute('data-key'); renderPanel(); });
+  });
+  renderPanel();
+})();
+
+/* 从首页 deep link 到 #story 时也同步标签 */
+window.addEventListener('hashchange', function () {
+  const k = (location.hash || '').replace('#', '');
+  if (PANELS.some(function (p) { return p.key === k; }) && k !== activePanel) {
+    activePanel = k; renderPanel();
+  }
+});
+
+/* ---------- 其他五柱 ---------- */
+(function () {
+  const box = document.getElementById('others');
+  ROLE_ORDER.filter(function (r) { return r !== roleId; }).forEach(function (rid) {
+    const r = ROLES[rid];
+    const card = el('a', { class: 'role-mini', href: 'role.html?role=' + rid });
+    card.style.setProperty('--rc', r.styling.palette[0]);
+    card.innerHTML = '<canvas></canvas><div class="rn">' + r.name + '</div>' +
+      '<div class="rp">' + r.pillar + '</div><div class="bar"></div>';
+    box.appendChild(card);
+    const cv = card.querySelector('canvas');
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = 132 * dpr; cv.height = 108 * dpr;
+    const c2 = cv.getContext('2d');
+    c2.scale(dpr, dpr);
+    drawMiniFigure(c2, rid, 132, 108, Math.random() * 6);
+  });
+})();
+
+/* ---------- 底部按钮 ---------- */
+document.getElementById('retest').addEventListener('click', function () { go('quiz.html'); });
+document.getElementById('toMakeup').addEventListener('click', function () { go('makeup.html', { role: roleId }); });
+</script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0B0709">
+<meta name="format-detection" content="telephone=no">
+<meta name="description" content="粤韵新声 · 粤剧行当六柱制角色测试与互动科普 H5">
+<title>粤韵新声 · 粤剧行当互动 H5</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+
+  <div data-topbar data-title="粤韵新声" data-sub="YUE YUN XIN SHENG" data-back="off"></div>
+
+  <!-- 首屏 -->
+  <div class="hero">
+    <div class="vline l"></div>
+    <div class="vline r"></div>
+    <div class="seal">粤韵</div>
+    <h1>粤韵新声</h1>
+    <div class="sub">香山文化视域下非遗粤剧艺术的数字化传播</div>
+    <div class="slogan">测一测，你是粤剧行当里的哪根台柱？</div>
+    <button class="btn" id="startBtn">开始测试 · 约 2 分钟</button>
+    <div class="credit">北京理工大学（珠海）大学生创新创业训练计划项目</div>
+  </div>
+
+  <!-- 功能入口 -->
+  <div class="section">
+    <div class="sec-head"><span class="num">壹</span><h2>五件事，认识粤剧行当</h2></div>
+    <div class="entry-list">
+      <a class="entry primary" href="quiz.html">
+        <span class="idx">测</span>
+        <span class="et"><b>六柱制角色测试</b><span>12 道题，测出你是哪根台柱</span></span>
+        <span class="arrow">›</span>
+      </a>
+      <a class="entry" href="role.html" id="myRoleEntry">
+        <span class="idx">相</span>
+        <span class="et"><b>我的行当 · 出场动画</b><span>看你的角色如何登台亮相</span></span>
+        <span class="arrow">›</span>
+      </a>
+      <a class="entry" href="role.html#story" id="storyEntry">
+        <span class="idx">事</span>
+        <span class="et"><b>角色的前世今生</b><span>这个行当从哪里来，今天又是什么模样</span></span>
+        <span class="arrow">›</span>
+      </a>
+      <a class="entry" href="makeup.html">
+        <span class="idx">妆</span>
+        <span class="et"><b>妆造搭配知识</b><span>贴片子、头面、髯口，行头里的门道</span></span>
+        <span class="arrow">›</span>
+      </a>
+      <a class="entry" href="masters.html">
+        <span class="idx">家</span>
+        <span class="et"><b>名家荟萃</b><span>唐涤生、红线女、马师曾、薛觉先</span></span>
+        <span class="arrow">›</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="seal-line">六柱制 · 六根台柱</div>
+
+  <!-- 六柱横滑 -->
+  <div class="section">
+    <div class="sec-head">
+      <span class="num">贰</span><h2>六个行当</h2>
+      <a class="more" href="masters.html">名家 →</a>
+    </div>
+    <div class="role-strip" id="roleStrip"></div>
+    <div class="hint" style="padding:0 2px">
+      六柱制是粤剧在 20 世纪 30 年代形成的戏班编制：由传统十大行当精简为
+      <b style="color:var(--gold-soft)">文武生、小生、正印花旦、二帮花旦、丑生、武生</b>
+      六位主要演员支撑全团演出。点开任一角色，可看出场动画、前世今生与妆造知识。
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="card gold">
+      <div class="sec-head" style="margin-bottom:8px"><h2 style="font-size:16px">给第一次看粤剧的你</h2></div>
+      <p class="hint" style="font-size:13px;color:#D8CBB4;line-height:1.9">
+        不用先懂唱腔。看戏可以先看三件事：<b style="color:var(--gold-soft)">他站在哪里</b>（舞台调度）、
+        <b style="color:var(--gold-soft)">他的袖子怎么动</b>（水袖是情绪的延长线）、
+        <b style="color:var(--gold-soft)">他的脸是什么颜色</b>（妆造直接把性格写在脸上）。
+        这个 H5 就是陪你把这三件事看明白。
+      </p>
+    </div>
+  </div>
+
+  <div data-footer></div>
+</div>
+
+<div data-bottomnav></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/character.js"></script>
+<script>
+mountChrome();
+
+/* 首页主按钮 */
+document.getElementById('startBtn').addEventListener('click', function () {
+  go('quiz.html');
+});
+
+/* 「我的行当」：已测过则直接跳结果页 */
+(function () {
+  const saved = loadResult();
+  if (saved && saved.roleId && ROLES[saved.roleId]) {
+    document.getElementById('myRoleEntry').setAttribute('href', 'role.html?role=' + saved.roleId);
+    document.getElementById('storyEntry').setAttribute('href', 'role.html?role=' + saved.roleId + '#story');
+    const b = document.querySelector('#myRoleEntry .et span');
+    if (b) b.textContent = '你上次测出的是「' + ROLES[saved.roleId].name + '」';
+  }
+})();
+
+/* 六柱横滑卡片 + 微型剪影动画 */
+(function () {
+  const strip = document.getElementById('roleStrip');
+  ROLE_ORDER.forEach(function (rid, i) {
+    const r = ROLES[rid];
+    const card = el('a', { class: 'role-mini', href: 'role.html?role=' + rid });
+    card.style.setProperty('--rc', (r.styling.palette && r.styling.palette[0]) || '#C9A227');
+    card.innerHTML =
+      '<canvas></canvas>' +
+      '<div class="rn">' + r.name + '</div>' +
+      '<div class="rp">' + r.pillar + '</div>' +
+      '<div class="bar"></div>';
+    strip.appendChild(card);
+    const cv = card.querySelector('canvas');
+    cv.style.height = '108px';
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const w = 132, h = 108;
+    cv.width = w * dpr; cv.height = h * dpr;
+    const c2 = cv.getContext('2d');
+    c2.scale(dpr, dpr);
+    drawMiniFigure(c2, rid, w, h, 0.6 + i * 0.9);
+  });
+})();
+</script>
+</body>
+</html>

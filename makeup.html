@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0B0709">
+<title>妆造搭配知识 · 粤韵新声</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+
+  <div data-topbar data-title="角色妆造搭配" data-sub="行头里的门道"></div>
+
+  <div class="section" style="margin-top:6px">
+    <div class="card gold">
+      <p style="font-size:14px;line-height:1.95;color:#E4D9C4;margin:0">
+        粤剧的妆造不是「化妆」，而是一套<b style="color:var(--gold-soft)">把人物写在脸上的语言</b>：
+        什么年纪、什么身份、什么性子，观众在演员开口之前就已经看见了。
+        下面先讲全行当通用的五件事，再按六个行当分别说明。
+      </p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-head"><span class="num">壹</span><h2>通用基础</h2></div>
+    <div id="basics"></div>
+  </div>
+
+  <div class="seal-line">六柱妆造对照</div>
+
+  <div class="section" style="padding:0">
+    <div class="tabbar" id="tabs"></div>
+  </div>
+
+  <div class="section" id="detail" style="margin-top:-4px"></div>
+
+  <div class="section">
+    <div class="card">
+      <div class="sec-head" style="margin-bottom:8px"><h2 style="font-size:15px">看戏时的三个观察点</h2></div>
+      <p class="hint" style="font-size:13.5px;color:#D8CBB4;line-height:1.95">
+        ① <b style="color:var(--gold-soft)">看额头</b>：旦角额角的片子贴法决定了脸型与气质，贴得紧就端庄，贴得开就活泼。<br>
+        ② <b style="color:var(--gold-soft)">看须口</b>：髯口的颜色与形制直接交代年龄和身份，黑三髯是壮年，白髯是老年。<br>
+        ③ <b style="color:var(--gold-soft)">看颜色</b>：蟒袍的用色有规矩，明黄最尊，紫红次之，黑白各有指向。
+      </p>
+    </div>
+    <div class="review-note" style="margin:0 0 4px">
+      ※ 本页内容为科普性整理，涉及具体戏班、流派的做法可能有所不同；正式发布前将请粤剧专业老师与传承人审校。
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="btn-row">
+      <button class="btn ghost" id="toMasters">看看名家 ›</button>
+      <button class="btn" id="toRole">回到我的行当</button>
+    </div>
+  </div>
+
+  <div data-footer></div>
+</div>
+
+<div data-bottomnav></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/character.js"></script>
+<script>
+mountChrome();
+
+/* ---------- 通用基础 ---------- */
+document.getElementById('basics').innerHTML = MAKEUP_BASICS.map(function (b) {
+  return '<div class="card"><div class="makeup-item">' +
+    '<div class="mi">' + b.icon + '</div>' +
+    '<div><h4>' + b.title + '</h4><p>' + b.text + '</p></div>' +
+  '</div></div>';
+}).join('');
+
+/* ---------- 六柱详情 ---------- */
+const saved = loadResult();
+let cur = getParam('role');
+if (!cur && saved && saved.roleId) cur = saved.roleId;
+if (!ROLES[cur]) cur = ROLE_ORDER[0];
+
+const tabs = document.getElementById('tabs');
+tabs.innerHTML = ROLE_ORDER.map(function (rid) {
+  return '<button class="tab" data-key="' + rid + '">' + ROLES[rid].name + '</button>';
+}).join('');
+$$('.tab', tabs).forEach(function (t) {
+  t.addEventListener('click', function () { cur = t.getAttribute('data-key'); renderDetail(); });
+  if (t.getAttribute('data-key') === cur) t.classList.add('on');
+});
+
+function renderDetail() {
+  $$('.tab', tabs).forEach(function (t) { t.classList.toggle('on', t.getAttribute('data-key') === cur); });
+  const r = ROLES[cur];
+  const s = r.styling;
+  const box = document.getElementById('detail');
+  box.innerHTML =
+    '<div class="card gold fade-in">' +
+      '<div class="sec-head" style="margin-bottom:10px">' +
+        '<span class="num">' + r.pillar + '</span>' +
+        '<h2 style="font-size:19px">' + r.name + '</h2>' +
+      '</div>' +
+      '<div style="text-align:center;margin:2px 0 12px">' +
+        '<canvas id="mini" style="width:150px;height:170px"></canvas>' +
+      '</div>' +
+      '<div class="kv">' +
+        '<div class="row"><span class="k">妆面</span><span class="v">' + s.face + '</span></div>' +
+        '<div class="row"><span class="k">头饰</span><span class="v">' + s.hair + '</span></div>' +
+        '<div class="row"><span class="k">服装</span><span class="v">' + s.costume + '</span></div>' +
+        '<div class="row"><span class="k">鞋履</span><span class="v">' + s.shoes + '</span></div>' +
+        '<div class="row"><span class="k">随身</span><span class="v">' + s.props.join(' · ') + '</span></div>' +
+      '</div>' +
+      '<div class="palette" style="margin-top:14px">' +
+        s.palette.map(function (c) { return '<i style="background:' + c + '"></i>'; }).join('') +
+      '</div>' +
+    '</div>' +
+    '<div class="card">' +
+      '<div class="sec-head" style="margin-bottom:10px"><h2 style="font-size:15px">日常可以怎么借鉴</h2></div>' +
+      '<ul style="padding-left:20px;font-size:14px;line-height:1.95;color:#E4D9C4">' +
+        s.tips.map(function (t) { return '<li style="margin-bottom:9px">' + t + '</li>'; }).join('') +
+      '</ul>' +
+    '</div>' +
+    '<div style="text-align:center;margin-top:6px">' +
+      '<a class="btn ghost" style="display:inline-block;width:auto;padding:11px 22px;font-size:14px" href="role.html?role=' + r.id + '">看 ' + r.name + ' 的出场动画与前世今生 ›</a>' +
+    '</div>';
+
+  const cv = document.getElementById('mini');
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = 150 * dpr; cv.height = 170 * dpr;
+  const c2 = cv.getContext('2d');
+  c2.scale(dpr, dpr);
+  drawMiniFigure(c2, r.id, 150, 170, 1.2);
+}
+renderDetail();
+
+/* ---------- 底部按钮 ---------- */
+document.getElementById('toMasters').addEventListener('click', function () { go('masters.html'); });
+document.getElementById('toRole').addEventListener('click', function () { go('role.html', { role: cur }); });
+</script>
+</body>
+</html>
