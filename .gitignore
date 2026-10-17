@@ -1,7 +1,12 @@
-﻿Thumbs.db
+Thumbs.db
 desktop.ini
 .DS_Store
 *.swp
 *~
 __pycache__/
 *.pyc
+
+# 以下仅本地工具，不发布到线上
+make_qrcode.py
+qrcode_pure.py
+qrcode.png
